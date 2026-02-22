@@ -1,0 +1,36 @@
+ Workbook = Param.Workbook
+cells = Workbook.GetSheet("Sheet1").Cells
+last = cells.GetLastColumnPosition + str(cells.GetRowCount)
+data = cells.GetRange('A1', last)
+container = Product.GetContainerByName("K_Items Included")
+container.Clear()
+for i in range(1, cells.GetRowCount):
+    # Extract product details from the data array
+    product_name = data[i, 0]
+    product_desc = data[i, 1]
+    cost = data[i, 2]
+    price = data[i, 3]
+ 
+    # Add new row to the container
+    row = container.AddNewRow("K_Office_Essential_cpq",False)
+    # Set row-level fields
+    row['office essentials'] = product_name
+    row['Description'] = product_desc
+    row['Cost'] = cost
+    row['Price1'] = price
+ 
+    if row:
+        # Product-level assignments
+        product = row.Product
+        product.PartNumberFormula = product_name
+
+
+        attributes = product.Attributes
+        attributes.GetByName('office essentials').AssignValue(product_name)
+        attributes.GetByName('Description').AssignValue(product_desc)
+        attributes.GetByName('Cost').AssignValue(cost)
+        attributes.GetByName('Price1').AssignValue(price)
+
+
+        # Apply changes
+        row.ApplyProductChanges()
