@@ -1,0 +1,78 @@
+import json
+
+# -------------------------------
+# 1. BASE URL (Dynamic)
+# -------------------------------
+base_url = Context.Quote.GetHostUrl()
+
+token_url = base_url + "/oauth2/token"
+api_base = base_url + "/api/custom-table/v1/customTables"
+
+# -------------------------------
+# 2. GET ACCESS TOKEN
+# -------------------------------
+token_payload = "grant_type=password&username=<USERNAME>&password=<PASSWORD>"
+
+token_headers = {
+    "Content-Type": "application/x-www-form-urlencoded"
+}
+
+token_response = RestClient.Post(token_url, token_payload, token_headers)
+
+if not token_response or "access_token" not in token_response:
+    raise Exception("Failed to get access token")
+
+access_token = token_response["access_token"]
+
+# -------------------------------
+# 3. COMMON HEADERS
+# -------------------------------
+headers = {
+    "Authorization": "Bearer " + access_token,
+    "Content-Type": "application/json"
+}
+
+# =====================================================
+# 4. GET RECORD (WITH FILTER)
+# =====================================================
+
+table_name = "<TABLE_NAME>"
+customer_id = "<CUSTOMER_ID>"
+
+get_url = api_base + "/{0}/entries?$filter=CustomerID eq '{1}'".format(table_name, customer_id)
+
+get_response = RestClient.Get(get_url, headers)
+
+Trace.Write("GET Response:\n" + str(get_response))
+
+
+# =====================================================
+# 5. POST RECORD
+# =====================================================
+
+post_url = api_base + "/{0}/entries".format(table_name)
+
+post_payload = {
+    "CustomerID": "CUST001",
+    "FirstName": "John",
+    "LastName": "Doe"
+}
+
+post_body = json.dumps(post_payload)
+
+post_response = RestClient.Post(post_url, post_body, headers)
+
+Trace.Write("POST Response:\n" + str(post_response))
+
+
+# =====================================================
+# 6. DELETE RECORD
+# =====================================================
+
+record_key = "<RECORD_KEY>"
+
+delete_url = api_base + "/{0}/entries/{1}".format(table_name, record_key)
+
+delete_response = RestClient.Delete(delete_url, headers)
+
+Trace.Write("DELETE Response:\n" + str(delete_response))
