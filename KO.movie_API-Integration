@@ -1,0 +1,311 @@
+//This is a frontend script using HTML,CSS,JAVASCRIPT,KNOCKOUT.JS
+@using WebSite.Controllers
+
+<div class="action-items-container" data-bind="with: cartActionsModel" role="menu">
+    <!-- ko if: areActionsVisibleOnSide() -->
+    <!-- ko if: primaryActions()[0] -->
+    <div class="action-row">
+        <a href="#" data-bind="click: checkPrimaryActionButtonsAvailable() ? primaryActions()[0].execute : null" class="btn-primary fiori3-btn-primary" role="button">
+            <!-- ko if : displayImagesForCartActions && !areActionsVisibleOnSide() -->
+            <img data-bind="attr: { src: primaryActions()[0].imageUrl }, visible: primaryActions()[0].imageUrl" alt="">
+            <!-- /ko -->
+            <span data-bind="text: primaryActions()[0].name"></span>
+        </a>
+    </div>
+    <!-- /ko -->
+
+    <!-- ko if: primaryActions()[1] -->
+    <div class="action-row">
+        <a href="#" data-bind="click: checkPrimaryActionButtonsAvailable() ? primaryActions()[1].execute : null" class="btn-tertiary fiori3-btn-tertiary" role="button">
+            <!-- ko if : displayImagesForCartActions && !areActionsVisibleOnSide() -->
+            <img data-bind="attr: { src: primaryActions()[1].imageUrl }, visible: primaryActions()[1].imageUrl" alt="">
+            <!-- /ko -->
+            <span data-bind="text: primaryActions()[1].name"></span>
+        </a>
+    </div>
+    <!-- /ko -->
+
+    <!-- ko if: primaryActions()[5] -->
+    <div class="action-row">
+        <a href="#" onclick="window.moviePopupVM.open()" class="btn-tertiary fiori3-btn-tertiary" role="button">
+            <!-- ko if : displayImagesForCartActions && !areActionsVisibleOnSide() -->
+            <img data-bind="attr: { src: primaryActions()[5].imageUrl }, visible: primaryActions()[5].imageUrl" alt="">
+            <!-- /ko -->
+            <span data-bind="text: primaryActions()[5].name || 'Fetch Movie Data'"></span>
+        </a>
+    </div>
+    <!-- /ko -->
+
+    <!-- /ko -->
+
+    <!-- Dropdown for extra actions -->
+    <!-- ko if: (areActionsVisibleOnSide() && (primaryActions().length > 6 || nonPrimaryActions().length > 0)) || (!areActionsVisibleOnSide() && (primaryActions().length > 0 || nonPrimaryActions().length > 0)) -->
+    <div id="cartActionsDropdownMenu" class="dropdown actions-dropdown fiori3-dropdown">
+        <a href="#" id="actionsDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" role="button" class="fiori3-icon-button" data-bind="tooltip: { title: '@Translation.GetJS("ActionsList.Title")', placement: 'auto top' }">
+            <span class="sap-icon">&#xe1f2;</span>
+        </a>
+        <div id="cartActionsDropdownMenuContainer" class="dropdown-menu slide-down" aria-labelledby="actionsDropdown">
+            <ul class="cpq-scroll">
+                <!-- ko template : { name : 'actionsTemplate', data: areActionsVisibleOnSide() ? primaryActions.slice(3,5) : primaryActions }  -->
+                <!-- /ko -->
+
+                <!-- ko if: canUndo -->
+                <li class="action-row">
+                    <a href="#" data-bind="click: undo" role="button">
+                        <!-- ko if: displayImagesForCartActions -->
+                        <img src="@CartController.DefaultActionImageUrl" alt="">
+                        <!-- /ko -->
+                        <span>@Translation.Get("xsltUndo")</span>
+                    </a>
+                </li>
+                <!-- /ko -->
+
+                <!-- ko if: canRedo -->
+                <li class="action-row">
+                    <a href="#" data-bind="click: redo" role="button">
+                        <!-- ko if: displayImagesForCartActions -->
+                        <img src="@CartController.DefaultActionImageUrl" alt="">
+                        <!-- /ko -->
+                        <span>@Translation.Get("xsltRedo")</span>
+                    </a>
+                </li>
+                <!-- /ko -->
+
+                <!-- ko template : { name : 'actionsTemplate', data: nonPrimaryActions }  -->
+                <!-- /ko -->
+            </ul>
+        </div>
+    </div>
+    <!-- /ko -->
+</div>
+
+@Html.PartialWithNameAsComment("~/Views/Cart/Templates/ActionsTemplate.cshtml")
+@Html.Partial("ScriptLocalization", new[] { "CartActionsModel" })
+@Html.PartialWithNameAsComment("~/Views/Cart/Dialogs/ConfirmHighStakesActionDialogTemplate.cshtml")
+
+<!-- ko stopBinding: true -->
+<div id="movieOverlay" data-bind="visible: isVisible" style="display: none;"></div>
+
+<div id="movieModal" data-bind="visible: isVisible" style="display: none;">
+    <h2>Movie & TV Explorer</h2>
+
+    <div class="movie-filters">
+        <select data-bind="value: mediaType">
+            <option value="">Select Media Type</option>
+            <option value="movie">Movie</option>
+            <option value="tv">TV</option>
+        </select>
+
+        <select data-bind="value: timeWindow">
+            <option value="">Select Time Window</option>
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+        </select>
+
+        <select data-bind="value: genre">
+            <option value="">Select Genre</option>
+            <option value="28">Action</option>
+            <option value="35">Comedy</option>
+            <option value="18">Drama</option>
+            <option value="10749">Romance</option>
+            <option value="27">Horror</option>
+        </select>
+    </div>
+
+    <div class="movie-buttons">
+        <button data-bind="click: fetchMovies" class="btn-fetch">Fetch</button>
+        <button data-bind="click: close" class="btn-close">Close</button>
+    </div>
+
+    <div id="movieLoader" data-bind="visible: loaderVisible">Loading...</div>
+
+
+    <!-- ko if: movies().length > 0 -->
+    <div class="movie-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Language</th>
+                    <th>Release Date</th>
+                    <th>Rating</th>
+                    <th>Overview</th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach: movies">
+                <tr>
+                    <td data-bind="text: $data.title || $data.name || '-'"></td>
+                    <td data-bind="text: $data.original_language || '-'"></td>
+                    <td data-bind="text: $data.release_date || $data.first_air_date || '-'"></td>
+                    <td data-bind="text: ($data.vote_average !== undefined && $data.vote_average !== null) ? $data.vote_average : '-'"></td>
+                    <td data-bind="text: $data.overview || '-'"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- /ko -->
+
+    <!-- ko if: movies().length === 0 && !loaderVisible() -->
+    <div>No results found. Try different filters.</div>
+    <!-- /ko -->
+</div>
+<!-- /ko -->
+<script>
+cpq.ready(function () {
+
+    ko.bindingHandlers.stopBinding = {
+        init: function () {
+            return { controlsDescendantBindings: true };
+        }
+    };
+    ko.virtualElements.allowedBindings.stopBinding = true;
+
+
+    function MoviePopupViewModel() {
+        var self = this;
+        self.isVisible = ko.observable(false);
+        self.mediaType = ko.observable("");
+        self.timeWindow = ko.observable("");
+        self.genre = ko.observable("");
+        self.loaderVisible = ko.observable(false);
+        self.movies = ko.observableArray([]);
+
+        self.open = function () {
+            self.clear();
+            self.isVisible(true);
+            document.body.style.overflow = "hidden";
+        };
+
+        self.close = function () {
+            self.isVisible(false);
+            document.body.style.overflow = "";
+        };
+
+        self.clear = function () {
+            self.mediaType("");
+            self.timeWindow("");
+            self.genre("");
+            self.movies([]);
+            self.loaderVisible(false);
+        };
+
+        self.fetchMovies = function () {
+            if (!self.mediaType() || !self.timeWindow() || !self.genre()) {
+                alert("Please select all fields.");
+                return;
+            }
+
+            self.loaderVisible(true);
+            var params = {
+                mediaType: self.mediaType(),
+                timeWindow: self.timeWindow(),
+                genre: self.genre()
+            };
+
+            cpq.server.executeScript("kusuma.movie", params, function (res) {
+                self.loaderVisible(false);
+                var data = typeof res === "string" ? JSON.parse(res) : res;
+                self.movies(data.results || []);
+            });
+        };
+    }
+
+
+    window.moviePopupVM = new MoviePopupViewModel();
+
+
+    ko.applyBindings(window.moviePopupVM, document.getElementById("movieModal"));
+});
+</script>
+
+
+<style>
+#movieOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+}
+#movieModal {
+    position: fixed;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    background: white;
+    padding: 20px;
+    z-index: 9999;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    max-height: 90vh;
+    overflow: auto;
+}
+.movie-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+.movie-filters select {
+    flex: 1;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.movie-buttons {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+}
+.btn-fetch {
+    padding: 10px 15px;
+    background-color: green;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+.btn-close {
+    padding: 10px 15px;
+    background-color: red;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+#movieLoader {
+    margin-top: 20px;
+    font-weight: bold;
+}
+.movie-table-container {
+    margin-top: 20px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+.movie-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.movie-table-container thead {
+    background-color: #007BFF;
+    color: white;
+}
+.movie-table-container th,
+.movie-table-container td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+</style>
+// Backend Script
+apiKey = "22f56dc20cc70e05b43a9482b5c459df"  
+media_type = Param.mediaType   
+time_window = Param.timeWindow 
+genre = Param.genre
+base_url = "https://api.themoviedb.org/3/trending/"
+url = base_url + media_type + "/" + time_window + "?api_key=" + apiKey
+res = RestClient.Get(url)
+Log.Info("TMDb API Response: " + str(res))
+# Return API response to frontend
+ApiResponse = ApiResponseFactory.JsonResponse(str(res))
