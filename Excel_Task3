@@ -1,0 +1,25 @@
+Workbook = Param.Workbook
+sheet = Workbook.GetSheet("Sheet1")
+cells = sheet.Cells
+lastCell = str(cells.GetLastColumnPosition) + str(cells.GetRowCount)
+data = cells.GetRange("A1", lastCell)
+
+brandList = ['Samsung Galaxy', 'OPPO A3', 'Apple Iphone 16']
+colorList = ['LIGHTBLUE', 'DARKBLUE', 'GREY', 'BLACK']
+
+# Loop through Excel rows starting from row 1 (skip header)
+for i in range(1, cells.GetRowCount):
+    selectedBrand = data[i, 0]
+    selectedColor = data[i, 1]
+
+    # Only proceed if either value exists
+    if selectedBrand or selectedColor:
+        if selectedBrand in brandList:
+            Product.Attr('K_smartphone_brand').SelectValue(selectedBrand)
+
+        if selectedColor in colorList:
+            Product.Attr('j_color').SelectValue(selectedColor)
+
+        # Stop after first valid row
+        break
+
