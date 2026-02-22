@@ -5,6 +5,7 @@ This repository contains multiple hands-on automation and integration tasks impl
 The objective of this repository is to demonstrate real-time CPQ configuration logic, dynamic pricing, external integrations, and automation capabilities.
 
 📌 Implemented Tasks Overview
+
 1️⃣ Broadband Pricing & Contract Automation
 
 Implemented dynamic pricing logic using custom SQL tables
